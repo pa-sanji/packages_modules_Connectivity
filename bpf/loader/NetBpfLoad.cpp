@@ -1549,40 +1549,35 @@ static int doLoad(char** argv, char * const envp[]) {
     // both S and T require kernel 4.9 (and eBpf support)
     // (this also guarantees 'kernelVer' isn't an invalid uninitialized 0)
     if (!isAtLeastKernelVersion(4, 9)) {
-        ALOGE("Android S & T require kernel 4.9.");
-        return 3;
+        ALOGW("Android S & T require kernel 4.9.");
     }
 
     // U bumps the kernel requirement up to 4.14
     if (isAtLeastU && !isAtLeastKernelVersion(4, 14)) {
-        ALOGE("Android U requires kernel 4.14.");
-        return 4;
+        ALOGW("Android U requires kernel 4.14.");
     }
 
     // V bumps the kernel requirement up to 4.19
     // see also: //system/netd/tests/kernel_test.cpp TestKernel419
     if (isAtLeastV && !isAtLeastKernelVersion(4, 19)) {
-        ALOGE("Android V requires kernel 4.19.");
-        return 5;
+        ALOGW("Android V requires kernel 4.19.");
     }
 
     // 25Q2 bumps the kernel requirement up to 5.4
     // see also: //system/netd/tests/kernel_test.cpp TestKernel54
     if (isAtLeast25Q2 && !isAtLeastKernelVersion(5, 4)) {
-        ALOGE("Android 25Q2 requires kernel 5.4.");
-        return 6;
+        ALOGW("Android 25Q2 requires kernel 5.4.");
     }
 
     // 25Q4 bumps the kernel requirement up to 5.10
     // see also: //system/netd/tests/kernel_test.cpp TestKernel510
     if (isAtLeast25Q4 && !isAtLeastKernelVersion(5, 10)) {
-        ALOGE("Android 25Q4 requires kernel 5.10.");
-        return 7;
+        ALOGW("Android 25Q4 requires kernel 5.10.");
     }
 
     // 26Q4 bumps the kernel requirement up to 5.15
     if (isAtLeast26Q4 && !isAtLeastKernelVersion(5, 15)) {
-        ALOGE("Android 26Q4 requires kernel 5.15.");
+        ALOGW("Android 26Q4 requires kernel 5.15.");
         return 7;
     }
 
@@ -1754,12 +1749,14 @@ static int doLoad(char** argv, char * const envp[]) {
         //  kernel does not have CONFIG_BPF_JIT=y)
         // BPF_JIT is required by R VINTF (which means 4.14/4.19/5.4 kernels),
         // but 4.14/4.19 were released with P & Q, and only 5.4 is new in R+.
-        if (!writeFile("/proc/sys/net/core/bpf_jit_enable", "1\n")) return 24;
+        if (!writeFile("/proc/sys/net/core/bpf_jit_enable", "1\n") &&
+            android::bpf::isAtLeastKernelVersion(4, 14, 0)) return 24;
 
         // Enable JIT kallsyms export for privileged users only
         // (Note: this (open) will fail with ENOENT 'No such file or directory' if
         //  kernel does not have CONFIG_HAVE_EBPF_JIT=y)
-        if (!writeFile("/proc/sys/net/core/bpf_jit_kallsyms", "1\n")) return 25;
+        if (!writeFile("/proc/sys/net/core/bpf_jit_kallsyms", "1\n") &&
+            android::bpf::isAtLeastKernelVersion(4, 14, 0)) return 25;
     }
 
     // Create all the pin subdirectories
